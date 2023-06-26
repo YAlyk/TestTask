@@ -4,6 +4,7 @@ from tkinter import ttk
 import datetime
 import subprocess
 import threading
+import time
 
 # Создание сокета
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -115,6 +116,8 @@ def stop_server():
 
 def create_screenshot(client_address):
     subprocess.Popen(["./client.exe", client_address])
+    time.sleep(1)  # Подождать некоторое время перед отправкой текста "Exit"
+    subprocess.Popen(["./client.exe", "Exit"])
 
 
 # Создание графического интерфейса с помощью tkinter

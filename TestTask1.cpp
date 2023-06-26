@@ -77,7 +77,7 @@ int main() {
         }
 
         // Задержка перед следующей отправкой данных
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::this_thread::sleep_for(std::chrono::seconds(5));
     }
 
     // Закрытие сокета и завершение
