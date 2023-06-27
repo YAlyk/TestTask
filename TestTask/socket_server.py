@@ -5,6 +5,7 @@ import datetime
 import subprocess
 import threading
 import time
+import os
 
 # Создание сокета
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -79,8 +80,19 @@ def handle_client(client_socket, client_address):
 
         print("Полученные данные:", data)
 
-        # Обработка полученных данных
-        handle_client_data(client_socket, client_address, data)
+        # Проверка типа данных (текст или картинка)
+        if data.startswith("IMAGE:"):
+            # Получение имени файла и данных скриншота
+            _, filename, screenshot_data = data.split(":", 2)
+
+            # Сохранение данных скриншота в файл
+            with open(os.path.join("screenshots", filename), 'wb') as f:
+                f.write(screenshot_data.encode())
+
+            print('Сохранено изображение:', filename)
+        else:
+            # Обработка текстовых данных
+            handle_client_data(client_socket, client_address, data)
 
     # Закрытие соединения
     client_socket.close()
@@ -96,14 +108,26 @@ def start_server():
     print("Сервер запущен. Ожидание подключения клиентов...")
 
     while is_server_running:
-        # Принятие подключения от клиента
-        client_socket, client_address = server_socket.accept()
-        print("Подключение от клиента:", client_address)
+        try:
+            # Принятие подключения от клиента
+            client_socket, client_address = server_socket.accept()
+            print("Подключение от клиента:", client_address)
 
-        # Создание отдельного потока для обработки клиента
-        client_thread = threading.Thread(
-            target=handle_client, args=(client_socket, client_address))
-        client_thread.start()
+            # Создание отдельного потока для обработки клиента
+            client_thread = threading.Thread(
+                target=handle_client, args=(client_socket, client_address))
+            client_thread.start()
+
+        except OSError as e:
+            # Обработка исключения при закрытии сокета
+            if e.errno == 9:  # EBADF (Bad file descriptor)
+                break
+            else:
+                raise
+
+    server_socket.close()
+    print("Сервер остановлен.")
+
 
 
 def stop_server():
@@ -114,10 +138,20 @@ def stop_server():
     print("Сервер остановлен.")
 
 
-def create_screenshot(client_address):
-    subprocess.Popen(["./client.exe", client_address])
-    time.sleep(1)  # Подождать некоторое время перед отправкой текста "Exit"
-    subprocess.Popen(["./client.exe", "Exit"])
+def create_screenshot_thread():
+    def create_screenshot():
+        with open('data.txt', 'w') as f:
+            f.write('screenshot')
+        time.sleep(1)
+        subprocess.run(["client.exe"])
+        time.sleep(1)
+        # subprocess.run(["python", "client.py", "screenshot"])
+        # time.sleep(15)  # Подождать некоторое время перед отправкой текста "exit"
+        # subprocess.Popen(["python", "client.py", "exit"])
+
+    # Создание отдельного потока для создания скриншота
+    screenshot_thread = threading.Thread(target=create_screenshot)
+    screenshot_thread.start()
 
 
 # Создание графического интерфейса с помощью tkinter
@@ -163,11 +197,11 @@ screenshot_button_frame = ttk.Frame(root)
 screenshot_button_frame.pack(pady=10)
 
 screenshot_button_1 = ttk.Button(screenshot_button_frame, text="Сделать скриншот (127.0.0.1)",
-                                 command=lambda: create_screenshot("127.0.0.1"))
+                                 command=lambda: create_screenshot_thread())
 screenshot_button_1.pack()
 
 screenshot_button_2 = ttk.Button(screenshot_button_frame, text="Сделать скриншот (192.168.0.1)",
-                                 command=lambda: create_screenshot("192.168.0.1"))
+                                 command=lambda: create_screenshot_thread())
 screenshot_button_2.pack()
 
 root.mainloop()

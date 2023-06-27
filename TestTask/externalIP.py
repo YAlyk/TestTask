@@ -8,3 +8,5 @@
 # external_ip = ip_data['ip']
 
 # print("Ваш внешний IP-адрес:", external_ip)
+
+

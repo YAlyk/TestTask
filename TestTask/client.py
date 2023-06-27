@@ -2,7 +2,7 @@ import socket
 from mss import mss
 import datetime
 import os
-import datetime
+import time
 
 # Создание сокета
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -10,11 +10,12 @@ client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_address = ('localhost', 65029)
 client_socket.connect(server_address)
 
+
 # Функция для создания и отправки скриншота
 def send_screenshot():
     # Отправка команды "screenshot" серверу
     client_socket.sendall(b'screenshot')
-    
+
     # Создание объекта mss для создания скриншота
     with mss() as sct:
         # Формирование имени файла на основе текущей даты и времени
@@ -34,12 +35,13 @@ def send_screenshot():
         # Удаление временного файла
         os.remove(filename)
 
+
 # Отправка скриншотов по требованию сервера
 while True:
     # Ожидание команды от сервера
     command = client_socket.recv(1024).decode()
 
-    if command == socket.gethostbyname(socket.gethostname()):
+    if command == 'screenshot':
         # Если команда - "screenshot", создаем и отправляем скриншот
         send_screenshot()
     elif command == 'exit':
@@ -47,7 +49,7 @@ while True:
         break
 
     # Задержка перед следующей итерацией цикла
-    datetime.time.sleep(1)
+    time.sleep(1)
 
 # Закрытие соединения
 client_socket.close()
